@@ -34,6 +34,21 @@
       "id": "qosmetics-walls",
       "versionRange": "^0.1.0",
       "additionalData": {}
+    },
+    {
+      "id": "config-utils",
+      "versionRange": "^0.8.0",
+      "additionalData": {}
+    },
+    {
+      "id": "questui",
+      "versionRange": "^0.16.4",
+      "additionalData": {}
+    },
+    {
+      "id": "custom-types",
+      "versionRange": "^0.15.18",
+      "additionalData": {}
     }
   ],
   "additionalData": {}

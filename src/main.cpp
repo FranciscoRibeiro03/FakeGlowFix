@@ -1,15 +1,27 @@
 #include "main.hpp"
+#include "ModConfig.hpp"
 
 #include "GlobalNamespace/BeatmapObjectsInstaller.hpp"
 #include "GlobalNamespace/ObstacleController.hpp"
 #include "GlobalNamespace/ConditionalActivation.hpp"
+#include "GlobalNamespace/MenuTransitionsHelper.hpp"
 
 #include "UnityEngine/GameObject.hpp"
 #include "UnityEngine/Object.hpp"
 #include "UnityEngine/Transform.hpp"
 #include "UnityEngine/MeshFilter.hpp"
 
+#include "UnityEngine/Resources.hpp"
+
+#include "UnityEngine/UI/VerticalLayoutGroup.hpp"
+
+#include "HMUI/ViewController.hpp"
+
+#include "questui/shared/QuestUI.hpp"
+
 #include "qosmetics-walls/shared/API.hpp"
+
+DEFINE_CONFIG(ModConfig)
 
 ConstString HideWrapper("HideWrapper");
 ConstString ObstacleFrame("ObstacleFrame");
@@ -24,6 +36,12 @@ Configuration& getConfig() {
 Logger& getLogger() {
     static Logger* logger = new Logger(modInfo);
     return *logger;
+}
+
+void DidActivate(HMUI::ViewController* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
+    if (!firstActivation) return;
+    auto vertical = QuestUI::BeatSaberUI::CreateVerticalLayoutGroup(self->get_transform());
+    AddConfigValueToggle(vertical->get_transform(), getModConfig().enabled);
 }
 
 MAKE_HOOK_MATCH(BeatmapObjectsInstaller_InstallBindings, &GlobalNamespace::BeatmapObjectsInstaller::InstallBindings, void, GlobalNamespace::BeatmapObjectsInstaller* self) 
@@ -42,7 +60,7 @@ MAKE_HOOK_MATCH(BeatmapObjectsInstaller_InstallBindings, &GlobalNamespace::Beatm
         auto obstacleFrameT = hideWrapperT ? hideWrapperT->Find(ObstacleFrame) : nullptr;
 
         auto conditionalActivation = obstacleFrameT->get_gameObject()->GetComponent<GlobalNamespace::ConditionalActivation*>();
-        conditionalActivation->activateOnFalse = true;
+        conditionalActivation->activateOnFalse = getModConfig().enabled.GetValue();
 
     }
 
@@ -57,6 +75,7 @@ extern "C" void setup(ModInfo& info) {
     modInfo = info;
 	
     getConfig().Load();
+    getModConfig().Init(modInfo);
     getLogger().info("Completed setup!");
 }
 
@@ -67,4 +86,8 @@ extern "C" void load() {
     getLogger().info("Installing hooks...");
     INSTALL_HOOK(getLogger(), BeatmapObjectsInstaller_InstallBindings);
     getLogger().info("Installed all hooks!");
+
+    getLogger().info("Registering UI...");
+    QuestUI::Register::RegisterModSettingsViewController(modInfo, DidActivate);
+    getLogger().info("Registered UI!");
 }

@@ -78,7 +78,7 @@ jobs:
     - name: Generate mod.json
       run: |
         chmod +x ./QPM/qpm-rust
-        ./QPM/qpm-rust build qmod
+        ./QPM/qpm-rust qmod build
 
     - name: Create Qmod
       run: |

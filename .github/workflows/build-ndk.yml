@@ -110,5 +110,5 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: debug_${{ steps.libname.outputs.NAME }}
-        path: ./obj/local/arm64-v8a/${{ steps.libname.outputs.NAME }}
+        path: ./build/debug/${{ steps.libname.outputs.NAME }}
         if-no-files-found: error

@@ -21,6 +21,23 @@
 
 #include "qosmetics-walls/shared/API.hpp"
 
+#define MAKE_CLONE_AND_PARENT(identifier)                                                               \
+    static UnityEngine::GameObject* parent_clone_##identifier = nullptr;                                \
+    if (parent_clone_##identifier)                                                                      \
+    {                                                                                                   \
+        UnityEngine::Object::DestroyImmediate(parent_clone_##identifier);                               \
+    }                                                                                                   \
+    static ConstString parent_name_##identifier("parent_clone_" #identifier);                           \
+    parent_clone_##identifier = UnityEngine::GameObject::New_ctor(parent_name_##identifier);            \
+    parent_clone_##identifier->SetActive(false);                                                        \
+    UnityEngine::Object::DontDestroyOnLoad(parent_clone_##identifier);                                  \
+    UnityEngine::Object::Instantiate(identifier, parent_clone_##identifier->get_transform());           \
+    auto type_##identifier = il2cpp_utils::GetSystemType(il2cpp_utils::ExtractType(identifier->klass)); \
+    auto clone_##identifier = parent_clone_##identifier->GetComponentsInChildren(type_##identifier)[0]; \
+    clone_##identifier->get_gameObject()->set_name(identifier->get_name());                             \
+    reinterpret_cast<UnityEngine::Component*&>(self->identifier) = clone_##identifier;                  \
+    self->identifier->get_gameObject()->SetActive(true)
+
 DEFINE_CONFIG(ModConfig)
 
 ConstString HideWrapper("HideWrapper");
@@ -50,9 +67,10 @@ MAKE_HOOK_MATCH(BeatmapObjectsInstaller_InstallBindings, &GlobalNamespace::Beatm
     std::optional<bool> qosDisabledOptional = Qosmetics::Walls::API::GetWallsDisabled();
     bool qosDisabled = qosDisabledOptional.value_or(true);
 
-    if (qosDisabled) {
+    auto obstaclePrefab = self->obstaclePrefab;
 
-        auto obstaclePrefab = self->obstaclePrefab;
+    if (qosDisabled) {
+        MAKE_CLONE_AND_PARENT(obstaclePrefab);
 
         auto t = obstaclePrefab ? obstaclePrefab->get_transform() : nullptr;
 
@@ -61,10 +79,11 @@ MAKE_HOOK_MATCH(BeatmapObjectsInstaller_InstallBindings, &GlobalNamespace::Beatm
 
         auto conditionalActivation = obstacleFrameT->get_gameObject()->GetComponent<GlobalNamespace::ConditionalActivation*>();
         conditionalActivation->activateOnFalse = getModConfig().enabled.GetValue();
-
     }
 
     BeatmapObjectsInstaller_InstallBindings(self);
+
+    if (qosDisabled) self->obstaclePrefab = obstaclePrefab;
 
 }
 
